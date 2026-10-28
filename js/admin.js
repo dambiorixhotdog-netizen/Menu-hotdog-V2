@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
-// 1. CONFIGURACIÓN (Asegúrate de tener tus datos reales aquí)
+// 1. CONFIGURACIÓN
 const SUPABASE_URL = 'https://wwizzismcjhphjfmtpcy.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_x0eBxaXrJ8zuda3n51UGXA_szWkMpSz';
 const CLOUDINARY_CLOUD = 'a1fyaupj';
@@ -11,22 +11,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 let allProducts = [];
 let allCategories = [];
 
-// 2. VERIFICAR SESIÓN
+// 2. VERIFICACIÓN DE SEGURIDAD
 async function checkAuth() {
   const { data: { session } } = await supabase.auth.getSession();
+  
   if (!session) {
-    // Si no hay sesión, podrías redirigir a un login. 
-    // Por ahora, como no hemos creado el login, avisamos con un alert.
-    alert('Debes iniciar sesión en Supabase Auth para editar.');
-    // window.location.href = 'login.html'; 
+    // Si no está logueado, redirigir al login
+    window.location.href = 'login.html';
+    return;
   }
+  
+  // Si está logueado, cargar los datos del panel
+  loadData();
 }
-checkAuth();
 
 // 3. CERRAR SESIÓN
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await supabase.auth.signOut();
-  window.location.reload();
+  window.location.href = 'login.html';
 });
 
 // 4. SUBIDA A CLOUDINARY
@@ -44,58 +46,72 @@ async function uploadImage(file) {
   return { url: data.secure_url, public_id: data.public_id };
 }
 
-// 5. NAVEGACIÓN (Tabs)
-function showTab(tab) {
-  document.getElementById('section-products').classList.toggle('hidden', tab !== 'products');
-  document.getElementById('section-categories').classList.toggle('hidden', tab !== 'categories');
+// 5. NAVEGACIÓN (Pestañas)
+window.showTab = function(tab) {
+  const secProducts = document.getElementById('section-products');
+  const secCategories = document.getElementById('section-categories');
+  const btnProducts = document.getElementById('tab-products');
+  const btnCategories = document.getElementById('tab-categories');
   
-  document.getElementById('tab-products').className = tab === 'products' ? 'px-4 py-2 rounded-xl font-bold bg-amber-500 text-slate-950' : 'px-4 py-2 rounded-xl font-bold text-slate-400 hover:text-white';
-  document.getElementById('tab-categories').className = tab === 'categories' ? 'px-4 py-2 rounded-xl font-bold bg-amber-500 text-slate-950' : 'px-4 py-2 rounded-xl font-bold text-slate-400 hover:text-white';
-}
+  if (!secProducts || !secCategories) return;
 
-// 6. CARGAR DATOS
+  secProducts.classList.toggle('hidden', tab !== 'products');
+  secCategories.classList.toggle('hidden', tab !== 'categories');
+  
+  btnProducts.className = tab === 'products' ? 'px-4 py-2 rounded-xl font-bold bg-amber-500 text-slate-950' : 'px-4 py-2 rounded-xl font-bold text-slate-400 hover:text-white';
+  btnCategories.className = tab === 'categories' ? 'px-4 py-2 rounded-xl font-bold bg-amber-500 text-slate-950' : 'px-4 py-2 rounded-xl font-bold text-slate-400 hover:text-white';
+};
+
+// 6. CARGAR DATOS (Productos y Categorías)
 async function loadData() {
-  // Categorías
-  const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
-  allCategories = cats || [];
-  document.getElementById('categoriesTable').innerHTML = allCategories.map(c => `
-    <tr>
-      <td class="p-4 font-bold text-white">${c.name}</td>
-      <td class="p-4 text-right"><button onclick="deleteCategory('${c.id}')" class="text-red-400 hover:text-white"><i class="fa-solid fa-trash"></i></button></td>
-    </tr>
-  `).join('');
-  
-  // Llenar Select del Formulario
-  document.getElementById('prod-cat').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  try {
+    // Cargar Categorías
+    const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
+    allCategories = cats || [];
+    
+    document.getElementById('categoriesTable').innerHTML = allCategories.map(c => `
+      <tr>
+        <td class="p-4 font-bold text-white">${c.name}</td>
+        <td class="p-4 text-right"><button onclick="deleteCategory('${c.id}')" class="text-red-400 hover:text-white"><i class="fa-solid fa-trash"></i></button></td>
+      </tr>
+    `).join('');
+    
+    // Llenar Select del Formulario de Productos
+    document.getElementById('prod-cat').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
 
-  // Productos
-  const { data: prods } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-  allProducts = prods || [];
-  document.getElementById('productsTable').innerHTML = allProducts.map(p => `
-    <tr>
-      <td class="p-4"><img src="${p.image_url || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded-md object-cover"></td>
-      <td class="p-4 font-bold text-white">${p.name} <br><span class="text-xs text-slate-500">${p.category_name}</span></td>
-      <td class="p-4 text-amber-400 font-bold">$${p.price}</td>
-      <td class="p-4 text-right">
-        <button onclick="editProduct('${p.id}')" class="text-blue-400 hover:text-white mr-2"><i class="fa-solid fa-pen"></i></button>
-        <button onclick="deleteProduct('${p.id}')" class="text-red-400 hover:text-white"><i class="fa-solid fa-trash"></i></button>
-      </td>
-    </tr>
-  `).join('');
+    // Cargar Productos
+    const { data: prods } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+    allProducts = prods || [];
+    
+    document.getElementById('productsTable').innerHTML = allProducts.map(p => `
+      <tr>
+        <td class="p-4"><img src="${p.image_url || 'https://via.placeholder.com/50?text=Sin+Foto'}" class="w-10 h-10 rounded-md object-cover"></td>
+        <td class="p-4 font-bold text-white">${p.name} <br><span class="text-xs text-slate-500">${p.category_name}</span></td>
+        <td class="p-4 text-amber-400 font-bold">$${p.price}</td>
+        <td class="p-4 text-right">
+          <button onclick="editProduct('${p.id}')" class="text-blue-400 hover:text-white mr-2"><i class="fa-solid fa-pen"></i></button>
+          <button onclick="deleteProduct('${p.id}')" class="text-red-400 hover:text-white"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (error) {
+    console.error("Error cargando datos:", error);
+  }
 }
-loadData();
 
-// 7. FORMULARIO
-function showForm() {
+// 7. FORMULARIO PRODUCTOS
+window.showForm = function() {
   document.getElementById('form-section').classList.remove('hidden');
   document.getElementById('productForm').reset();
   document.getElementById('prod-id').value = '';
   document.getElementById('form-title').innerText = 'Nuevo Producto';
-}
+  document.getElementById('img-preview').classList.add('hidden');
+  document.getElementById('variants-section').classList.add('hidden');
+};
 
-function hideForm() {
+window.hideForm = function() {
   document.getElementById('form-section').classList.add('hidden');
-}
+};
 
 // Previsualización de Imagen
 document.getElementById('prod-img').addEventListener('change', (e) => {
@@ -120,6 +136,7 @@ document.getElementById('prod-has-variants').addEventListener('change', (e) => {
 document.getElementById('productForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = e.target.querySelector('button[type="submit"]');
+  const originalText = btn.innerText;
   btn.innerText = 'Guardando...';
   btn.disabled = true;
 
@@ -131,14 +148,12 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
     let imageUrl = null;
     let imagePublicId = null;
 
-    // Si hay archivo, subir a Cloudinary
     if (file) {
       const uploaded = await uploadImage(file);
       imageUrl = uploaded.url;
       imagePublicId = uploaded.public_id;
     }
 
-    // Si estamos editando, conservar la imagen anterior si no se subió una nueva
     if (id && !file) {
       const existing = allProducts.find(p => p.id === id);
       if (existing) {
@@ -176,15 +191,15 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
     hideForm();
     loadData();
   } catch (err) {
-    alert('Error: ' + err.message);
+    alert('Error al guardar: ' + err.message);
   } finally {
-    btn.innerText = 'Guardar';
+    btn.innerText = originalText;
     btn.disabled = false;
   }
 });
 
-// Editar
-function editProduct(id) {
+// 8. EDITAR / ELIMINAR
+window.editProduct = function(id) {
   const p = allProducts.find(x => x.id === id);
   if (!p) return;
   
@@ -210,18 +225,20 @@ function editProduct(id) {
   }
   
   window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+};
 
-// Eliminar
-async function deleteProduct(id) {
+window.deleteProduct = async function(id) {
   if (!confirm('¿Eliminar producto?')) return;
   await supabase.from('products').delete().eq('id', id);
   loadData();
-}
+};
 
-async function deleteCategory(id) {
+window.deleteCategory = async function(id) {
   if (!confirm('¿Eliminar categoría?')) return;
   const { error } = await supabase.from('categories').delete().eq('id', id);
   if (error) alert('No se puede eliminar: tiene productos asociados.');
   else loadData();
-}
+};
+
+// Inicializar Auth
+checkAuth();
