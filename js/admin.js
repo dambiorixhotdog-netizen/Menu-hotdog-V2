@@ -16,12 +16,9 @@ async function checkAuth() {
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session) {
-    // Si no está logueado, redirigir al login
     window.location.href = 'login.html';
     return;
   }
-  
-  // Si está logueado, cargar los datos del panel
   loadData();
 }
 
@@ -53,8 +50,6 @@ window.showTab = function(tab) {
   const btnProducts = document.getElementById('tab-products');
   const btnCategories = document.getElementById('tab-categories');
   
-  if (!secProducts || !secCategories) return;
-
   secProducts.classList.toggle('hidden', tab !== 'products');
   secCategories.classList.toggle('hidden', tab !== 'categories');
   
@@ -62,7 +57,7 @@ window.showTab = function(tab) {
   btnCategories.className = tab === 'categories' ? 'px-4 py-2 rounded-xl font-bold bg-amber-500 text-slate-950' : 'px-4 py-2 rounded-xl font-bold text-slate-400 hover:text-white';
 };
 
-// 6. CARGAR DATOS (Productos y Categorías)
+// 6. CARGAR DATOS
 async function loadData() {
   try {
     // Cargar Categorías
@@ -76,8 +71,10 @@ async function loadData() {
       </tr>
     `).join('');
     
-    // Llenar Select del Formulario de Productos
-    document.getElementById('prod-cat').innerHTML = allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    // Llenar Select del Formulario
+    const selectCat = document.getElementById('prod-cat');
+    selectCat.innerHTML = '<option value="">Selecciona una categoría...</option>' + 
+      allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
 
     // Cargar Productos
     const { data: prods } = await supabase.from('products').select('*').order('created_at', { ascending: false });
@@ -99,7 +96,7 @@ async function loadData() {
   }
 }
 
-// 7. FORMULARIO PRODUCTOS
+// 7. FORMULARIO
 window.showForm = function() {
   document.getElementById('form-section').classList.remove('hidden');
   document.getElementById('productForm').reset();
@@ -107,13 +104,14 @@ window.showForm = function() {
   document.getElementById('form-title').innerText = 'Nuevo Producto';
   document.getElementById('img-preview').classList.add('hidden');
   document.getElementById('variants-section').classList.add('hidden');
+  document.getElementById('prod-cat').value = ''; // Resetear select
 };
 
 window.hideForm = function() {
   document.getElementById('form-section').classList.add('hidden');
 };
 
-// Previsualización de Imagen
+// Previsualización
 document.getElementById('prod-img').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (file) {
@@ -135,6 +133,13 @@ document.getElementById('prod-has-variants').addEventListener('change', (e) => {
 // Guardar Producto
 document.getElementById('productForm').addEventListener('submit', async (e) => {
   e.preventDefault();
+  
+  const catValue = document.getElementById('prod-cat').value;
+  if (!catValue) {
+    alert("Por favor, selecciona una categoría antes de guardar.");
+    return;
+  }
+
   const btn = e.target.querySelector('button[type="submit"]');
   const originalText = btn.innerText;
   btn.innerText = 'Guardando...';
@@ -173,7 +178,7 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
     const payload = {
       name: document.getElementById('prod-name').value,
       price: parseFloat(document.getElementById('prod-price').value),
-      category_name: document.getElementById('prod-cat').value,
+      category_name: catValue,
       description: document.getElementById('prod-desc').value,
       image_url: imageUrl,
       image_public_id: imagePublicId,
@@ -208,7 +213,7 @@ window.editProduct = function(id) {
   document.getElementById('prod-id').value = p.id;
   document.getElementById('prod-name').value = p.name;
   document.getElementById('prod-price').value = p.price;
-  document.getElementById('prod-cat').value = p.category_name;
+  document.getElementById('prod-cat').value = p.category_name; // Selecciona la categoría correcta
   document.getElementById('prod-desc').value = p.description || '';
   
   if (p.image_url) {

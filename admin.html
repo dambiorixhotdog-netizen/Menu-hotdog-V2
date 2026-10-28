@@ -50,7 +50,10 @@
         
         <div>
           <label class="text-xs text-slate-400 font-bold">Categoría</label>
-          <select id="prod-cat" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white focus:border-amber-500 outline-none" required></select>
+          <!-- Se quitó el required para evitar el error de validación nativa -->
+          <select id="prod-cat" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white focus:border-amber-500 outline-none">
+            <option value="">Cargando categorías...</option>
+          </select>
         </div>
         
         <div>
