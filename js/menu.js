@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
+
+// URL CORREGIDA
 const supabase = createClient('https://eiphlylrwwjogoyqwns.supabase.co', 'sb_publishable_x0eBxaXrJ8zuda3n51UGXA_szWkMpSz');
 
 let menuData = [];
@@ -9,7 +11,7 @@ async function loadPublicData() {
   const { data: prods } = await supabase.from('products').select('*').eq('is_available', true);
   
   if (cats) {
-    window.categoriesData = cats; // Guardamos para las tarjetas
+    window.categoriesData = cats; 
     categories = ['Todos', ...cats.map(c => c.name)];
   }
   if (prods) {
