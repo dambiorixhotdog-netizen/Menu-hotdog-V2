@@ -32,7 +32,9 @@
       <button onclick="showTab('categories')" id="tab-categories" class="px-4 py-2 rounded-xl font-bold text-slate-400 hover:text-white">Categorías</button>
     </div>
 
-    <!-- FORMULARIO DE PRODUCTO -->
+    <!-- ========================================== -->
+    <!-- FORMULARIO DE PRODUCTO                     -->
+    <!-- ========================================== -->
     <section id="form-section" class="bg-slate-900 p-6 rounded-2xl border border-slate-800 hidden">
       <h2 class="font-title text-lg text-white font-bold mb-4" id="form-title">Nuevo Producto</h2>
       <form id="productForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -50,7 +52,6 @@
         
         <div>
           <label class="text-xs text-slate-400 font-bold">Categoría</label>
-          <!-- Se quitó el required para evitar el error de validación nativa -->
           <select id="prod-cat" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white focus:border-amber-500 outline-none">
             <option value="">Cargando categorías...</option>
           </select>
@@ -85,16 +86,43 @@
 
         <div class="md:col-span-2 flex gap-2 pt-4">
           <button type="submit" class="bg-amber-500 text-slate-950 font-bold px-6 py-2.5 rounded-xl hover:bg-amber-400">Guardar</button>
-          <button type="button" onclick="hideForm()" class="bg-slate-800 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-slate-700">Cancelar</button>
+          <button type="button" onclick="hideProductForm()" class="bg-slate-800 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-slate-700">Cancelar</button>
         </div>
       </form>
     </section>
 
-    <!-- TABLA DE PRODUCTOS -->
+    <!-- ========================================== -->
+    <!-- FORMULARIO DE CATEGORÍA                    -->
+    <!-- ========================================== -->
+    <section id="category-form-section" class="bg-slate-900 p-6 rounded-2xl border border-slate-800 hidden">
+      <h2 class="font-title text-lg text-white font-bold mb-4" id="category-form-title">Nueva Categoría</h2>
+      <form id="categoryForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input type="hidden" id="cat-id">
+        
+        <div>
+          <label class="text-xs text-slate-400 font-bold">Nombre de la Categoría</label>
+          <input type="text" id="cat-name" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white focus:border-amber-500 outline-none" required>
+        </div>
+        
+        <div>
+          <label class="text-xs text-slate-400 font-bold">Orden (Número)</label>
+          <input type="number" id="cat-order" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white focus:border-amber-500 outline-none" required>
+        </div>
+
+        <div class="md:col-span-2 flex gap-2 pt-4">
+          <button type="submit" class="bg-amber-500 text-slate-950 font-bold px-6 py-2.5 rounded-xl hover:bg-amber-400">Guardar Categoría</button>
+          <button type="button" onclick="hideCategoryForm()" class="bg-slate-800 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-slate-700">Cancelar</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TABLA DE PRODUCTOS                         -->
+    <!-- ========================================== -->
     <section id="section-products">
       <div class="flex justify-between items-center mb-4">
         <h2 class="font-title text-xl font-bold text-white">Productos</h2>
-        <button onclick="showForm()" class="bg-amber-500 text-slate-950 font-bold px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-amber-400 text-sm"><i class="fa-solid fa-plus"></i> Nuevo Producto</button>
+        <button onclick="showProductForm()" class="bg-amber-500 text-slate-950 font-bold px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-amber-400 text-sm"><i class="fa-solid fa-plus"></i> Nuevo Producto</button>
       </div>
       <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
         <table class="w-full text-left text-sm">
@@ -111,16 +139,20 @@
       </div>
     </section>
 
-    <!-- TABLA DE CATEGORÍAS -->
+    <!-- ========================================== -->
+    <!-- TABLA DE CATEGORÍAS                        -->
+    <!-- ========================================== -->
     <section id="section-categories" class="hidden">
       <div class="flex justify-between items-center mb-4">
         <h2 class="font-title text-xl font-bold text-white">Categorías</h2>
+        <button onclick="showCategoryForm()" class="bg-amber-500 text-slate-950 font-bold px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-amber-400 text-sm"><i class="fa-solid fa-plus"></i> Nueva Categoría</button>
       </div>
       <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-800/50 text-slate-400">
             <tr>
               <th class="p-4">Nombre</th>
+              <th class="p-4">Orden</th>
               <th class="p-4 text-right">Acciones</th>
             </tr>
           </thead>

@@ -1,6 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
-// 1. CONFIGURACIÓN
 const SUPABASE_URL = 'https://wwizzismcjhphjfmtpcy.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_x0eBxaXrJ8zuda3n51UGXA_szWkMpSz';
 const CLOUDINARY_CLOUD = 'a1fyaupj';
@@ -11,10 +10,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 let allProducts = [];
 let allCategories = [];
 
-// 2. VERIFICACIÓN DE SEGURIDAD
-async function checkAuth() {
+// ==========================================
+// 1. SEGURIDAD Y CARGA INICIAL
+// ==========================================
+async function initApp() {
+  await loadCategoriesForSelect();
+
   const { data: { session } } = await supabase.auth.getSession();
-  
   if (!session) {
     window.location.href = 'login.html';
     return;
@@ -22,13 +24,29 @@ async function checkAuth() {
   loadData();
 }
 
-// 3. CERRAR SESIÓN
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await supabase.auth.signOut();
   window.location.href = 'login.html';
 });
 
-// 4. SUBIDA A CLOUDINARY
+async function loadCategoriesForSelect() {
+  try {
+    const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
+    allCategories = cats || [];
+    
+    const selectCat = document.getElementById('prod-cat');
+    if (selectCat) {
+      selectCat.innerHTML = '<option value="">Selecciona una categoría...</option>' + 
+        allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    }
+  } catch (error) {
+    console.error("Error cargando categorías:", error);
+  }
+}
+
+// ==========================================
+// 2. SUBIDA A CLOUDINARY
+// ==========================================
 async function uploadImage(file) {
   const formData = new FormData();
   formData.append('file', file);
@@ -43,7 +61,9 @@ async function uploadImage(file) {
   return { url: data.secure_url, public_id: data.public_id };
 }
 
-// 5. NAVEGACIÓN (Pestañas)
+// ==========================================
+// 3. NAVEGACIÓN (Tabs)
+// ==========================================
 window.showTab = function(tab) {
   const secProducts = document.getElementById('section-products');
   const secCategories = document.getElementById('section-categories');
@@ -57,26 +77,24 @@ window.showTab = function(tab) {
   btnCategories.className = tab === 'categories' ? 'px-4 py-2 rounded-xl font-bold bg-amber-500 text-slate-950' : 'px-4 py-2 rounded-xl font-bold text-slate-400 hover:text-white';
 };
 
-// 6. CARGAR DATOS
+// ==========================================
+// 4. CARGAR DATOS EN TABLAS
+// ==========================================
 async function loadData() {
   try {
-    // Cargar Categorías
-    const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
-    allCategories = cats || [];
-    
+    // Tabla Categorías
     document.getElementById('categoriesTable').innerHTML = allCategories.map(c => `
       <tr>
         <td class="p-4 font-bold text-white">${c.name}</td>
-        <td class="p-4 text-right"><button onclick="deleteCategory('${c.id}')" class="text-red-400 hover:text-white"><i class="fa-solid fa-trash"></i></button></td>
+        <td class="p-4 text-slate-400">${c.sort_order}</td>
+        <td class="p-4 text-right">
+          <button onclick="editCategory('${c.id}')" class="text-blue-400 hover:text-white mr-2"><i class="fa-solid fa-pen"></i></button>
+          <button onclick="deleteCategory('${c.id}')" class="text-red-400 hover:text-white"><i class="fa-solid fa-trash"></i></button>
+        </td>
       </tr>
     `).join('');
-    
-    // Llenar Select del Formulario
-    const selectCat = document.getElementById('prod-cat');
-    selectCat.innerHTML = '<option value="">Selecciona una categoría...</option>' + 
-      allCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
 
-    // Cargar Productos
+    // Tabla Productos
     const { data: prods } = await supabase.from('products').select('*').order('created_at', { ascending: false });
     allProducts = prods || [];
     
@@ -96,22 +114,23 @@ async function loadData() {
   }
 }
 
-// 7. FORMULARIO
-window.showForm = function() {
+// ==========================================
+// 5. FORMULARIO DE PRODUCTO
+// ==========================================
+window.showProductForm = function() {
   document.getElementById('form-section').classList.remove('hidden');
   document.getElementById('productForm').reset();
   document.getElementById('prod-id').value = '';
   document.getElementById('form-title').innerText = 'Nuevo Producto';
   document.getElementById('img-preview').classList.add('hidden');
   document.getElementById('variants-section').classList.add('hidden');
-  document.getElementById('prod-cat').value = ''; // Resetear select
+  document.getElementById('prod-cat').value = '';
 };
 
-window.hideForm = function() {
+window.hideProductForm = function() {
   document.getElementById('form-section').classList.add('hidden');
 };
 
-// Previsualización
 document.getElementById('prod-img').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (file) {
@@ -125,20 +144,14 @@ document.getElementById('prod-img').addEventListener('change', (e) => {
   }
 });
 
-// Variantes
 document.getElementById('prod-has-variants').addEventListener('change', (e) => {
   document.getElementById('variants-section').classList.toggle('hidden', !e.target.checked);
 });
 
-// Guardar Producto
 document.getElementById('productForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  
   const catValue = document.getElementById('prod-cat').value;
-  if (!catValue) {
-    alert("Por favor, selecciona una categoría antes de guardar.");
-    return;
-  }
+  if (!catValue) { alert("Por favor, selecciona una categoría."); return; }
 
   const btn = e.target.querySelector('button[type="submit"]');
   const originalText = btn.innerText;
@@ -158,13 +171,9 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
       imageUrl = uploaded.url;
       imagePublicId = uploaded.public_id;
     }
-
     if (id && !file) {
       const existing = allProducts.find(p => p.id === id);
-      if (existing) {
-        imageUrl = existing.image_url;
-        imagePublicId = existing.image_public_id;
-      }
+      if (existing) { imageUrl = existing.image_url; imagePublicId = existing.image_public_id; }
     }
 
     let options = [];
@@ -186,14 +195,11 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
       options: options
     };
 
-    if (id) {
-      await supabase.from('products').update(payload).eq('id', id);
-    } else {
-      await supabase.from('products').insert([payload]);
-    }
+    if (id) await supabase.from('products').update(payload).eq('id', id);
+    else await supabase.from('products').insert([payload]);
 
-    alert('Guardado con éxito');
-    hideForm();
+    alert('Producto guardado con éxito');
+    hideProductForm();
     loadData();
   } catch (err) {
     alert('Error al guardar: ' + err.message);
@@ -203,17 +209,63 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
   }
 });
 
-// 8. EDITAR / ELIMINAR
+// ==========================================
+// 6. FORMULARIO DE CATEGORÍA
+// ==========================================
+window.showCategoryForm = function() {
+  document.getElementById('category-form-section').classList.remove('hidden');
+  document.getElementById('categoryForm').reset();
+  document.getElementById('cat-id').value = '';
+  document.getElementById('category-form-title').innerText = 'Nueva Categoría';
+  // Sugerir el siguiente número de orden
+  document.getElementById('cat-order').value = allCategories.length + 1;
+};
+
+window.hideCategoryForm = function() {
+  document.getElementById('category-form-section').classList.add('hidden');
+};
+
+document.getElementById('categoryForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.innerText = 'Guardando...';
+  btn.disabled = true;
+
+  const id = document.getElementById('cat-id').value;
+  const payload = {
+    name: document.getElementById('cat-name').value,
+    sort_order: parseInt(document.getElementById('cat-order').value)
+  };
+
+  try {
+    if (id) await supabase.from('categories').update(payload).eq('id', id);
+    else await supabase.from('categories').insert([payload]);
+
+    alert('Categoría guardada con éxito');
+    hideCategoryForm();
+    await loadCategoriesForSelect(); // Recargar el select de productos
+    loadData(); // Recargar tabla
+  } catch (err) {
+    alert('Error al guardar categoría: ' + err.message);
+  } finally {
+    btn.innerText = 'Guardar Categoría';
+    btn.disabled = false;
+  }
+});
+
+// ==========================================
+// 7. EDITAR / ELIMINAR
+// ==========================================
 window.editProduct = function(id) {
   const p = allProducts.find(x => x.id === id);
   if (!p) return;
   
-  showForm();
+  showProductForm();
   document.getElementById('form-title').innerText = 'Editar Producto';
   document.getElementById('prod-id').value = p.id;
   document.getElementById('prod-name').value = p.name;
   document.getElementById('prod-price').value = p.price;
-  document.getElementById('prod-cat').value = p.category_name; // Selecciona la categoría correcta
+  document.getElementById('prod-cat').value = p.category_name;
   document.getElementById('prod-desc').value = p.description || '';
   
   if (p.image_url) {
@@ -238,12 +290,26 @@ window.deleteProduct = async function(id) {
   loadData();
 };
 
-window.deleteCategory = async function(id) {
-  if (!confirm('¿Eliminar categoría?')) return;
-  const { error } = await supabase.from('categories').delete().eq('id', id);
-  if (error) alert('No se puede eliminar: tiene productos asociados.');
-  else loadData();
+window.editCategory = function(id) {
+  const c = allCategories.find(x => x.id === id);
+  if (!c) return;
+  
+  showCategoryForm();
+  document.getElementById('category-form-title').innerText = 'Editar Categoría';
+  document.getElementById('cat-id').value = c.id;
+  document.getElementById('cat-name').value = c.name;
+  document.getElementById('cat-order').value = c.sort_order;
 };
 
-// Inicializar Auth
-checkAuth();
+window.deleteCategory = async function(id) {
+  if (!confirm('¿Eliminar categoría? Si tiene productos, no se borrará.')) return;
+  const { error } = await supabase.from('categories').delete().eq('id', id);
+  if (error) alert('No se puede eliminar: tiene productos asignados.');
+  else {
+    await loadCategoriesForSelect();
+    loadData();
+  }
+};
+
+// Iniciar
+initApp();
