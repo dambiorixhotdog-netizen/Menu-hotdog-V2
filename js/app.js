@@ -28,7 +28,6 @@ function printTicket() {
 
 // ===== INICIALIZACIÓN =====
 window.addEventListener('DOMContentLoaded', () => {
-  renderCategories(); // Carga las tarjetas de categorías
   updateCartUI();     // Inicializa el carrito en 0
   generateQRCode();   // Genera el QR
 });

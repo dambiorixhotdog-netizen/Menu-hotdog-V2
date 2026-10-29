@@ -1,20 +1,22 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
-// URL Y LLAVE CORREGIDAS
 const supabase = createClient('https://eiphlylrwwijogoyqwns.supabase.co', 'sb_publishable_afTPTTSnyflSQpDVZLzlvA_1G08TBJp');
-let menuData = [];
-let categories = ['Todos'];
+
+// Hacemos las variables globales para que cart.js las pueda leer
+window.menuData = [];
+window.categoriesData = [];
 
 async function loadPublicData() {
-  const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
-  const { data: prods } = await supabase.from('products').select('*').eq('is_available', true);
-  
-  if (cats) {
-    window.categoriesData = cats; 
-    categories = ['Todos', ...cats.map(c => c.name)];
-  }
-  if (prods) {
-    window.menuData = prods.map(p => ({
+  try {
+    const { data: cats, error: errCats } = await supabase.from('categories').select('*').order('sort_order');
+    const { data: prods, error: errProds } = await supabase.from('products').select('*').eq('is_available', true);
+    
+    if (errCats) throw errCats;
+    if (errProds) throw errProds;
+
+    window.categoriesData = cats || [];
+    
+    window.menuData = (prods || []).map(p => ({
       id: p.id,
       category: p.category_name,
       name: p.name,
@@ -24,15 +26,23 @@ async function loadPublicData() {
       options: p.options,
       image_url: p.image_url
     }));
+
+    renderCategories();
+  } catch (error) {
+    console.error("Error cargando menú público:", error);
   }
-  renderCategories();
 }
 
 function renderCategories() {
   const container = document.getElementById('categoriesGrid');
-  const uniqueCategories = window.categoriesData || [];
+  if (!container) return;
 
-  container.innerHTML = uniqueCategories.map(cat => {
+  if (window.categoriesData.length === 0) {
+    container.innerHTML = '<p class="text-center text-slate-500 col-span-full py-8">Cargando menú...</p>';
+    return;
+  }
+
+  container.innerHTML = window.categoriesData.map(cat => {
     const imageUrl = cat.image_url || 'https://res.cloudinary.com/a1fyaupj/image/upload/v1792886979/jiras50ep0ujnnioeyky.jpg';
     return `
       <div onclick="openCategoryModal('${cat.name}')" class="cursor-pointer bg-slate-900 border border-slate-800 hover:border-amber-500/40 rounded-2xl overflow-hidden transition-all hover:shadow-lg group flex flex-col h-32">
@@ -45,7 +55,7 @@ function renderCategories() {
   }).join('');
 }
 
-function openCategoryModal(categoryName) {
+window.openCategoryModal = function(categoryName) {
   const modal = document.getElementById('categoryProductsModal');
   const title = document.getElementById('modalCategoryTitle');
   const grid = document.getElementById('modalProductsGrid');
@@ -82,8 +92,12 @@ function openCategoryModal(categoryName) {
   modal.classList.remove('hidden');
 }
 
-function closeCategoryModal() { document.getElementById('categoryProductsModal').classList.add('hidden'); }
-function handleSearch() {}
-function clearSearch() {}
+window.closeCategoryModal = function() { 
+  document.getElementById('categoryProductsModal').classList.add('hidden'); 
+}
 
-window.onload = loadPublicData;
+window.handleSearch = function() {}
+window.clearSearch = function() {}
+
+// Arrancar la carga
+loadPublicData();

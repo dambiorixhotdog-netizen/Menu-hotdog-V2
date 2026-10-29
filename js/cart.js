@@ -1,10 +1,10 @@
 // ===== AGREGAR AL CARRITO =====
 function handleAddToCart(itemId) {
-  const item = menuData.find(i => i.id === itemId);
+  const item = window.menuData.find(i => i.id === itemId);
   if (!item) return;
 
   if (item.hasVariants) {
-    openOptionModal(item); // Abre el modal de variantes (si tiene opciones)
+    openOptionModal(item); 
   } else {
     addToCart({ id: item.id, name: item.name, price: item.price, variant: null });
   }
@@ -31,7 +31,7 @@ function closeOptionModal() {
 }
 
 function selectOptionAndAdd(itemId, variantLabel, price) {
-  const item = menuData.find(i => i.id === itemId);
+  const item = window.menuData.find(i => i.id === itemId);
   if (!item) return;
 
   addToCart({
