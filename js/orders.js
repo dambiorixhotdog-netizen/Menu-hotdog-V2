@@ -1,6 +1,22 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 const supabase = createClient('https://eiphlylrwwijogoyqwns.supabase.co', 'sb_publishable_afTPTTSnyflSQpDVZLzlvA_1G08TBJp');
 
+// Mostrar/Ocultar campo de dirección según el tipo de pedido
+window.addEventListener('DOMContentLoaded', () => {
+  const orderType = document.getElementById('orderType');
+  const addressContainer = document.getElementById('addressContainer');
+  
+  if (orderType && addressContainer) {
+    orderType.addEventListener('change', (e) => {
+      if (e.target.value === 'Domicilio') {
+        addressContainer.classList.remove('hidden');
+      } else {
+        addressContainer.classList.add('hidden');
+      }
+    });
+  }
+});
+
 // ===== CONFIRMAR PEDIDO Y ENVIAR A WHATSAPP =====
 async function confirmOrder() {
   if (AppState.cart.length === 0) {
@@ -10,7 +26,6 @@ async function confirmOrder() {
 
   const customerNameInput = document.getElementById('customerName');
   const customerName = customerNameInput ? customerNameInput.value.trim() : '';
-  
   if (!customerName) {
     alert('Por favor ingresa tu nombre para el turno.');
     if (customerNameInput) customerNameInput.focus();
@@ -20,10 +35,19 @@ async function confirmOrder() {
   const orderTypeInput = document.getElementById('orderType');
   const paymentMethodInput = document.getElementById('paymentMethod');
   const notesInput = document.getElementById('orderNotes');
+  const addressInput = document.getElementById('customerAddress');
 
   const orderType = orderTypeInput ? orderTypeInput.value : 'Para Llevar';
   const paymentMethod = paymentMethodInput ? paymentMethodInput.value : 'Efectivo';
   const notes = notesInput ? notesInput.value.trim() : '';
+  const address = addressInput ? addressInput.value.trim() : '';
+
+  // Validar que si es Domicilio, haya dirección
+  if (orderType === 'Domicilio' && !address) {
+    alert('Por favor ingresa tu dirección para el envío a domicilio.');
+    if (addressInput) addressInput.focus();
+    return;
+  }
 
   const turnoNum = `#T-${AppState.orderCounter}`;
   AppState.orderCounter++;
@@ -36,6 +60,7 @@ async function confirmOrder() {
     type: orderType,
     payment: paymentMethod,
     notes: notes,
+    address: address, // Guardamos la dirección
     items: [...AppState.cart],
     total: calculateCartSubtotal(),
     status: APP_CONFIG.orderStatus.PREPARING,
@@ -51,7 +76,6 @@ async function confirmOrder() {
 
   showTicketModal(newOrder);
 
-  // Esperar un poco y abrir WhatsApp automáticamente
   setTimeout(() => {
     sendWhatsAppOrder(newOrder);
   }, 500);
@@ -65,6 +89,16 @@ function showTicketModal(order) {
   document.getElementById('ticketPayment').innerText = order.payment;
   document.getElementById('ticketDate').innerText = order.date;
   document.getElementById('ticketTotal').innerText = `$${order.total}`;
+
+  // Mostrar dirección en el ticket si es Domicilio
+  const addressRow = document.getElementById('ticketAddressRow');
+  const addressText = document.getElementById('ticketAddress');
+  if (order.type === 'Domicilio' && order.address) {
+    addressRow.classList.remove('hidden');
+    addressText.innerText = order.address;
+  } else {
+    addressRow.classList.add('hidden');
+  }
 
   const notesContainer = document.getElementById('ticketNotesContainer');
   if (order.notes) {
@@ -107,6 +141,9 @@ async function sendWhatsAppOrder(orderToSend) {
   message += `*TURNO:* ${t.turno}\n`;
   message += `*Cliente:* ${t.customer}\n`;
   message += `*Tipo:* ${t.type}\n`;
+  if (t.type === 'Domicilio' && t.address) {
+    message += `*Dirección:* ${t.address}\n`;
+  }
   message += `*Pago:* ${t.payment}\n\n`;
   message += `*DETALLE DEL PEDIDO:*\n`;
   t.items.forEach(item => {
@@ -118,7 +155,7 @@ async function sendWhatsAppOrder(orderToSend) {
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
 }
 
-// Exponer funciones al window para que los botones con "onclick" funcionen
+// Exponer funciones
 window.confirmOrder = confirmOrder;
 window.closeTicketModal = closeTicketModal;
 window.sendWhatsAppOrder = sendWhatsAppOrder;
