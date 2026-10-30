@@ -57,8 +57,10 @@ function addToCart(product) {
 
 function animateCartButton() {
   const cartBar = document.getElementById('floatingCartBtn');
-  cartBar.classList.add('scale-105');
-  setTimeout(() => cartBar.classList.remove('scale-105'), 150);
+  if (cartBar) {
+    cartBar.classList.add('scale-105');
+    setTimeout(() => cartBar.classList.remove('scale-105'), 150);
+  }
 }
 
 function changeQty(id, delta) {
@@ -76,8 +78,17 @@ function updateCartUI() {
   const totalItems = calculateCartCount();
   const subtotal = calculateCartSubtotal();
 
-  document.getElementById('cartBadgeCount').innerText = totalItems;
-  document.getElementById('cartBarTotal').innerText = formatPrice(subtotal);
+  // Actualizar contador escritorio
+  const cartBadge = document.getElementById('cartBadgeCount');
+  if (cartBadge) cartBadge.innerText = totalItems;
+  
+  // Actualizar contador celular
+  const mobileBadge = document.getElementById('mobileCartBadge');
+  if (mobileBadge) mobileBadge.innerText = totalItems;
+
+  const cartBarTotal = document.getElementById('cartBarTotal');
+  if (cartBarTotal) cartBarTotal.innerText = formatPrice(subtotal);
+
   document.getElementById('cartSubtotal').innerText = formatPrice(subtotal);
   document.getElementById('cartTotal').innerText = formatPrice(subtotal);
 
