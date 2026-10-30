@@ -81,7 +81,14 @@
           <!-- CAMPO DE DIRECCIÓN (Oculto por defecto) -->
           <div id="addressContainer" class="hidden">
             <label class="block text-xs font-semibold text-slate-300 mb-1">Dirección Exacta <span class="text-red-500">*</span></label>
-            <input type="text" id="customerAddress" placeholder="Calle, número, sector..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:border-amber-500">
+            <input type="text" id="customerAddress" placeholder="Calle, número, sector..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:border-amber-500 mb-2">
+            
+            <!-- BOTÓN PARA COMPARTIR UBICACIÓN -->
+            <button type="button" onclick="shareLocation()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
+              <i class="fa-solid fa-location-dot"></i> Compartir Ubicación (Google Maps)
+            </button>
+            <input type="hidden" id="customerLocationURL" value="">
+            <p id="locationStatus" class="text-[10px] text-green-400 mt-1 hidden"><i class="fa-solid fa-check"></i> Ubicación adjuntada correctamente.</p>
           </div>
 
           <div><label class="block text-xs font-semibold text-slate-300 mb-1">Notas</label><input type="text" id="orderNotes" placeholder="Ej. Sin mayonesa..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:border-amber-500"></div>
@@ -107,7 +114,7 @@
     </div>
   </div>
 
-  <!-- MODALES RESTANTES (Variantes, Ticket, QR) - Sin cambios -->
+  <!-- MODAL VARIANTES -->
   <div id="priceOptionModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
     <div class="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-sm w-full p-5 shadow-2xl relative space-y-4">
       <button onclick="closeOptionModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -116,13 +123,14 @@
     </div>
   </div>
 
+  <!-- MODAL TICKET -->
   <div id="ticketModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md overflow-y-auto">
     <div class="bg-slate-900 border-2 border-amber-500 rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-5 my-8">
       <button onclick="closeTicketModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
       <div id="printableTicket" class="bg-slate-950 p-5 rounded-2xl border border-amber-500/30 text-center space-y-4">
         <div class="inline-block bg-red-600/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-red-500/30">¡Pedido Recibido!</div>
         <div><span class="text-xs text-slate-400 uppercase tracking-widest font-bold">Tu Número de Turno</span><div id="ticketTurnoDisplay" class="text-5xl font-black font-title text-amber-400 my-1 tracking-tight amber-glow bg-amber-500/10 py-3 rounded-2xl border border-amber-500/40">#001</div><p class="text-xs text-slate-300">Guarda este número.</p></div>
-        <div class="border-t border-b border-dashed border-slate-800 py-2 my-2 text-left text-xs space-y-1"><p class="font-bold text-slate-200 text-center text-sm font-title">D’AMBIORIX HOTDOG</p><p class="text-center text-amber-400/80 text-[11px]">Higiene, Calidad y Sabor!!</p><div class="pt-2 flex justify-between text-slate-400"><span>Cliente: <strong id="ticketCustomer" class="text-white">--</strong></span><span>Tipo: <strong id="ticketType" class="text-white">--</strong></span></div><div class="flex justify-between text-slate-400"><span>Pago: <strong id="ticketPayment" class="text-white">--</strong></span><span>Fecha: <strong id="ticketDate" class="text-white">--</strong></span></div><div id="ticketAddressRow" class="hidden text-slate-400 pt-1"><span>Dir: <strong id="ticketAddress" class="text-white">--</strong></span></div></div>
+        <div class="border-t border-b border-dashed border-slate-800 py-2 my-2 text-left text-xs space-y-1"><p class="font-bold text-slate-200 text-center text-sm font-title">D’AMBIORIX HOTDOG</p><p class="text-center text-amber-400/80 text-[11px]">Higiene, Calidad y Sabor!!</p><div class="pt-2 flex justify-between text-slate-400"><span>Cliente: <strong id="ticketCustomer" class="text-white">--</strong></span><span>Tipo: <strong id="ticketType" class="text-white">--</strong></span></div><div class="flex justify-between text-slate-400"><span>Pago: <strong id="ticketPayment" class="text-white">--</strong></span><span>Fecha: <strong id="ticketDate" class="text-white">--</strong></span></div><div id="ticketAddressRow" class="hidden text-slate-400 pt-1"><span>Dir: <strong id="ticketAddress" class="text-white">--</strong></span></div><div id="ticketMapRow" class="hidden text-slate-400 pt-1"><span>Mapa: <a id="ticketMapLink" href="#" target="_blank" class="text-blue-400 underline font-bold">Ver ubicación exacta</a></span></div></div>
         <div class="text-left space-y-1 text-xs"><p class="font-bold text-slate-300 uppercase text-[10px] tracking-wider mb-1">Detalle:</p><div id="ticketItemsList" class="space-y-1 divide-y divide-slate-800/50"></div></div>
         <div class="border-t border-slate-800 pt-2 flex justify-between items-center text-sm"><span class="font-bold text-slate-300">TOTAL:</span><span id="ticketTotal" class="font-black text-amber-400 text-lg">$0</span></div>
         <div id="ticketNotesContainer" class="hidden text-left bg-slate-900 p-2 rounded text-[11px] text-slate-400 border border-slate-800"><strong>Notas:</strong> <span id="ticketNotes">--</span></div>
@@ -131,6 +139,7 @@
     </div>
   </div>
 
+  <!-- MODAL QR -->
   <div id="qrModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
     <div class="bg-slate-900 border border-amber-500/40 rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4 relative">
       <button onclick="closeQRModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
