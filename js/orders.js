@@ -1,23 +1,29 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 const supabase = createClient('https://eiphlylrwwijogoyqwns.supabase.co', 'sb_publishable_afTPTTSnyflSQpDVZLzlvA_1G08TBJp');
 
-// ===== CONFIRMAR PEDIDO =====
+// ===== CONFIRMAR PEDIDO Y ENVIAR A WHATSAPP =====
 async function confirmOrder() {
   if (AppState.cart.length === 0) {
     alert('Tu carrito está vacío. Agrega productos antes de confirmar.');
     return;
   }
 
-  const customerName = document.getElementById('customerName').value.trim();
+  const customerNameInput = document.getElementById('customerName');
+  const customerName = customerNameInput ? customerNameInput.value.trim() : '';
+  
   if (!customerName) {
     alert('Por favor ingresa tu nombre para el turno.');
-    document.getElementById('customerName').focus();
+    if (customerNameInput) customerNameInput.focus();
     return;
   }
 
-  const orderType = document.getElementById('orderType').value;
-  const paymentMethod = document.getElementById('paymentMethod').value;
-  const notes = document.getElementById('orderNotes').value.trim();
+  const orderTypeInput = document.getElementById('orderType');
+  const paymentMethodInput = document.getElementById('paymentMethod');
+  const notesInput = document.getElementById('orderNotes');
+
+  const orderType = orderTypeInput ? orderTypeInput.value : 'Para Llevar';
+  const paymentMethod = paymentMethodInput ? paymentMethodInput.value : 'Efectivo';
+  const notes = notesInput ? notesInput.value.trim() : '';
 
   const turnoNum = `#T-${AppState.orderCounter}`;
   AppState.orderCounter++;
@@ -29,7 +35,7 @@ async function confirmOrder() {
     customer: customerName,
     type: orderType,
     payment: paymentMethod,
-    notes,
+    notes: notes,
     items: [...AppState.cart],
     total: calculateCartSubtotal(),
     status: APP_CONFIG.orderStatus.PREPARING,
@@ -44,9 +50,14 @@ async function confirmOrder() {
   playOrderBeep();
 
   showTicketModal(newOrder);
+
+  // Esperar un poco y abrir WhatsApp automáticamente
+  setTimeout(() => {
+    sendWhatsAppOrder(newOrder);
+  }, 500);
 }
 
-// ===== MODAL DEL TICKET =====
+// ===== MOSTRAR EL TICKET =====
 function showTicketModal(order) {
   document.getElementById('ticketTurnoDisplay').innerText = order.turno;
   document.getElementById('ticketCustomer').innerText = order.customer;
@@ -77,10 +88,10 @@ function closeTicketModal() {
   document.getElementById('ticketModal').classList.add('hidden');
 }
 
-// ===== WHATSAPP =====
-async function sendWhatsAppOrder() {
-  if (!AppState.currentTicket) return;
-  const t = AppState.currentTicket;
+// ===== ENVIAR A WHATSAPP =====
+async function sendWhatsAppOrder(orderToSend) {
+  const t = orderToSend || AppState.currentTicket;
+  if (!t) return;
 
   let phone = APP_CONFIG.whatsappPhone;
   try {
@@ -89,7 +100,7 @@ async function sendWhatsAppOrder() {
       phone = data[0].whatsapp_phone;
     }
   } catch (error) {
-    console.warn("No se pudo obtener el número de WhatsApp de Supabase, usando el predeterminado.");
+    console.warn("Usando número por defecto.");
   }
 
   let message = `*NUEVO PEDIDO - D’AMBIORIX HOTDOG*\n`;
@@ -106,3 +117,8 @@ async function sendWhatsAppOrder() {
 
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
 }
+
+// Exponer funciones al window para que los botones con "onclick" funcionen
+window.confirmOrder = confirmOrder;
+window.closeTicketModal = closeTicketModal;
+window.sendWhatsAppOrder = sendWhatsAppOrder;
