@@ -78,11 +78,9 @@ function updateCartUI() {
   const totalItems = calculateCartCount();
   const subtotal = calculateCartSubtotal();
 
-  // Actualizar contador escritorio
   const cartBadge = document.getElementById('cartBadgeCount');
   if (cartBadge) cartBadge.innerText = totalItems;
   
-  // Actualizar contador celular
   const mobileBadge = document.getElementById('mobileCartBadge');
   if (mobileBadge) mobileBadge.innerText = totalItems;
 

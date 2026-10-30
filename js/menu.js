@@ -41,20 +41,15 @@ function renderCategories() {
     return;
   }
 
+  // Tarjetas con el diseño original (40% imagen, 60% texto)
   container.innerHTML = window.categoriesData.map(cat => {
     const imageUrl = cat.image_url || 'https://res.cloudinary.com/a1fyaupj/image/upload/v1792886979/jiras50ep0ujnnioeyky.jpg';
     
     return `
-      <div onclick="openCategoryModal('${cat.name}')" class="cursor-pointer bg-slate-900 border border-slate-800 hover:border-amber-500/40 rounded-2xl overflow-hidden transition-all hover:shadow-lg group flex flex-col h-40">
+      <div onclick="openCategoryModal('${cat.name}')" class="cursor-pointer bg-slate-900 border border-slate-800 hover:border-amber-500/40 rounded-2xl overflow-hidden transition-all hover:shadow-lg group flex flex-col h-32">
         <div class="flex h-full">
-          <div class="w-[70%] h-full overflow-hidden relative">
-            <img src="${imageUrl}" alt="${cat.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-            <div class="absolute inset-0 bg-gradient-to-r from-transparent to-slate-900/40"></div>
-          </div>
-          <div class="w-[30%] p-3 flex flex-col justify-center items-start">
-            <h3 class="font-title font-extrabold text-white text-sm leading-tight group-hover:text-amber-300 transition-colors uppercase break-words">${cat.name}</h3>
-            <span class="text-amber-500 text-[10px] font-bold mt-1 flex items-center gap-1 group-hover:gap-2 transition-all">Ver <i class="fa-solid fa-arrow-right"></i></span>
-          </div>
+          <div class="w-2/5 h-full overflow-hidden"><img src="${imageUrl}" alt="${cat.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"></div>
+          <div class="w-3/5 p-4 flex flex-col justify-center items-start"><h3 class="font-title font-extrabold text-white text-lg leading-snug group-hover:text-amber-300 transition-colors uppercase">${cat.name}</h3><span class="text-amber-500 text-xs font-bold mt-1 flex items-center gap-1 group-hover:gap-2 transition-all">Ver Productos <i class="fa-solid fa-arrow-right"></i></span></div>
         </div>
       </div>
     `;
@@ -66,7 +61,6 @@ window.openCategoryModal = function(categoryName) {
   const title = document.getElementById('modalCategoryTitle');
   const grid = document.getElementById('modalProductsGrid');
   
-  // Mostrar flecha de Atrás en la barra móvil
   const btnBack = document.getElementById('btnMobileBack');
   if (btnBack) btnBack.classList.remove('hidden');
 
@@ -105,7 +99,6 @@ window.openCategoryModal = function(categoryName) {
 window.closeCategoryModal = function() { 
   document.getElementById('categoryProductsModal').classList.add('hidden'); 
   
-  // Ocultar flecha de Atrás al volver al inicio
   const btnBack = document.getElementById('btnMobileBack');
   if (btnBack) btnBack.classList.add('hidden');
 }
