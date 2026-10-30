@@ -1,6 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
-// URL Y LLAVE CORREGIDAS
 const supabase = createClient('https://eiphlylrwwijogoyqwns.supabase.co', 'sb_publishable_afTPTTSnyflSQpDVZLzlvA_1G08TBJp');
 let allProducts = [], allCategories = [];
 
@@ -9,6 +8,7 @@ async function initApp() {
   if (!session) { window.location.href = 'login.html'; return; }
   document.body.classList.remove('hidden');
   await loadCategoriesForSelect();
+  await loadSettings();
   loadData();
 }
 
@@ -34,9 +34,34 @@ async function uploadImage(file) {
 window.showTab = function(tab) {
   document.getElementById('section-products').classList.toggle('hidden', tab !== 'products');
   document.getElementById('section-categories').classList.toggle('hidden', tab !== 'categories');
-  document.getElementById('tab-products').className = tab === 'products' ? 'px-4 py-2 rounded-xl font-bold bg-amber-500 text-slate-950' : 'px-4 py-2 rounded-xl font-bold text-slate-400';
-  document.getElementById('tab-categories').className = tab === 'categories' ? 'px-4 py-2 rounded-xl font-bold bg-amber-500 text-slate-950' : 'px-4 py-2 rounded-xl font-bold text-slate-400';
+  document.getElementById('settings-section').classList.toggle('hidden', tab !== 'settings');
+  
+  document.getElementById('tab-products').className = tab === 'products' ? 'px-4 py-2 rounded-xl font-bold bg-amber-500 text-slate-950 whitespace-nowrap' : 'px-4 py-2 rounded-xl font-bold text-slate-400 whitespace-nowrap';
+  document.getElementById('tab-categories').className = tab === 'categories' ? 'px-4 py-2 rounded-xl font-bold bg-amber-500 text-slate-950 whitespace-nowrap' : 'px-4 py-2 rounded-xl font-bold text-slate-400 whitespace-nowrap';
+  document.getElementById('tab-settings').className = tab === 'settings' ? 'px-4 py-2 rounded-xl font-bold bg-amber-500 text-slate-950 whitespace-nowrap' : 'px-4 py-2 rounded-xl font-bold text-slate-400 whitespace-nowrap';
 };
+
+async function loadSettings() {
+  const { data } = await supabase.from('categories').select('whatsapp_phone').limit(1);
+  if (data && data.length > 0 && data[0].whatsapp_phone) {
+    document.getElementById('whatsapp-number').value = data[0].whatsapp_phone;
+  }
+}
+
+document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.innerText = 'Guardando...';
+  
+  const phone = document.getElementById('whatsapp-number').value.trim();
+  
+  const { error } = await supabase.from('categories').update({ whatsapp_phone: phone }).neq('id', '00000000-0000-0000-0000-000000000000');
+  
+  if (error) alert('Error al guardar: ' + error.message);
+  else alert('Número de WhatsApp actualizado correctamente');
+  
+  btn.innerText = 'Guardar Número';
+});
 
 async function loadData() {
   document.getElementById('categoriesTable').innerHTML = allCategories.map(c => `

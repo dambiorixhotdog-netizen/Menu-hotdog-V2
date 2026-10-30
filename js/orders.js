@@ -1,5 +1,8 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
+const supabase = createClient('https://eiphlylrwwijogoyqwns.supabase.co', 'sb_publishable_afTPTTSnyflSQpDVZLzlvA_1G08TBJp');
+
 // ===== CONFIRMAR PEDIDO =====
-function confirmOrder() {
+async function confirmOrder() {
   if (AppState.cart.length === 0) {
     alert('Tu carrito está vacío. Agrega productos antes de confirmar.');
     return;
@@ -75,9 +78,19 @@ function closeTicketModal() {
 }
 
 // ===== WHATSAPP =====
-function sendWhatsAppOrder() {
+async function sendWhatsAppOrder() {
   if (!AppState.currentTicket) return;
   const t = AppState.currentTicket;
+
+  let phone = APP_CONFIG.whatsappPhone;
+  try {
+    const { data } = await supabase.from('categories').select('whatsapp_phone').limit(1);
+    if (data && data.length > 0 && data[0].whatsapp_phone) {
+      phone = data[0].whatsapp_phone;
+    }
+  } catch (error) {
+    console.warn("No se pudo obtener el número de WhatsApp de Supabase, usando el predeterminado.");
+  }
 
   let message = `*NUEVO PEDIDO - D’AMBIORIX HOTDOG*\n`;
   message += `*TURNO:* ${t.turno}\n`;
@@ -91,5 +104,5 @@ function sendWhatsAppOrder() {
   if (t.notes) message += `\n*Notas:* ${t.notes}\n`;
   message += `\n*TOTAL: $${t.total}*`;
 
-  window.open(`https://wa.me/${APP_CONFIG.whatsappPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
 }
